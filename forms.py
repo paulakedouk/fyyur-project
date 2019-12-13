@@ -41,6 +41,3 @@ class ArtistForm(FlaskForm):
                                  validators=[DataRequired()],
                                  choices=GENRES)
     facebook_link = StringField('facebook_link', validators=[URL()])
-    website = StringField('website')
-    seeking_venue = BooleanField('seeking_venue')
-    seeking_description = StringField('seeking_description')
