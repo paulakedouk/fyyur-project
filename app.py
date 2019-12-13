@@ -102,53 +102,57 @@ def index():
 
 @app.route('/venues')
 def venues():
-    # TODO: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
-    #   data=[{
-    #     "city": "San Francisco",
-    #     "state": "CA",
-    #     "venues": [{
-    #       "id": 1,
-    #       "name": "The Musical Hop",
-    #       "num_upcoming_shows": 0,
-    #     }, {
-    #       "id": 3,
-    #       "name": "Park Square Live Music & Coffee",
-    #       "num_upcoming_shows": 1,
-    #     }]
-    #   }, {
-    #     "city": "New York",
-    #     "state": "NY",
-    #     "venues": [{
-    #       "id": 2,
-    #       "name": "The Dueling Pianos Bar",
-    #       "num_upcoming_shows": 0,
-    #     }]
-    #   }]
     
-    return render_template('pages/venues.html', 
-    areas=Venue.query.all())
+    venues = Venue.query.all()
+
+    # If there are duplicates
+    locations = set()
+
+    # Add the city/state to the new location variable
+    for venue in venues:
+        locations.add((venue.city, venue.state))
+
+    # Append all venues in each city/state
+    data = []
+    for location in locations:
+        data.append({
+            "city": location[0],
+            "state": location[1],
+            "venues": []
+        })
+
+    for venue in venues:
+
+        shows = Show.query.filter_by(venue_id=venue.id).all()
+        current_date = datetime.now()
+        num_upcoming_shows = 0
+
+        # Compare if show time is earlier than current time
+        for show in shows:
+            if show.start_time > current_date:
+                num_upcoming_shows += 1
+
+        # Append all locations into data to show on the page
+        for venue_location in data:
+            if venue.state == venue_location['state'] and venue.city == venue_location['city']:
+                venue_location['venues'].append({
+                    "id": venue.id,
+                    "name": venue.name,
+                    "num_upcoming_shows": num_upcoming_shows
+                })
+    return render_template('pages/venues.html', areas=data)
 
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
-    # seach for Hop should return "The Musical Hop".
-    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-    response = {
-        "count":
-        1,
-        "data": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
+    search_term = request.form.get('search_term', '')
+    result = Venue.query.filter(Venue.name.ilike(f'%{search_term}%'))
+
+    response={
+        "count": result.count(),
+        "data": result
     }
-
-    return render_template('pages/search_venues.html',
-                           results=response,
-                           search_term=request.form.get('search_term', ''))
-
+    return render_template('pages/search_venues.html', results=response, search_term=search_term)
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
