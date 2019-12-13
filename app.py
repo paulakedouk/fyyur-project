@@ -10,7 +10,7 @@ from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
 from logging import Formatter, FileHandler
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from forms import *
 
 from flask_migrate import Migrate
@@ -33,14 +33,17 @@ migrate = Migrate(app, db)
 class Venue(db.Model):
     __tablename__ = 'Venue'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120))
-    city = db.Column(db.String(120))
-    state = db.Column(db.String(120))
-    address = db.Column(db.String(120))
+    name = db.Column(db.String, nullable=False)
+    city = db.Column(db.String(120), nullable=False)
+    state = db.Column(db.String(120), nullable=False)
+    address = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120))
-    image_link = db.Column(db.String(120))
+    image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
+    website = db.Column(db.String(250))
+    seeking_talent = db.Column(db.Boolean)
+    seeking_description = db.Column(db.String(250))
 
     shows = db.relationship('Show', backref='venue', lazy=True)
     def __repr__(self):
@@ -158,6 +161,7 @@ def search_venues():
 def show_venue(venue_id):
     venue = Venue.query.get(venue_id)
     shows = Show.query.filter_by(venue_id=venue_id).all()
+    venue.genres = venue.genres.split()
 
     past_shows = []
     upcoming_shows = []
@@ -184,7 +188,10 @@ def show_venue(venue_id):
         "phone": venue.phone,
         "genres": venue.genres,
         "image_link": venue.image_link,
+        "website": venue.website,
         "facebook_link": venue.facebook_link,
+        "seeking_talent": venue.seeking_talent,
+        "seeking_description":venue.seeking_description,
         "past_shows": past_shows,
         "upcoming_shows": upcoming_shows,
         "past_shows_count": len(past_shows),
@@ -207,24 +214,20 @@ def create_venue_form():
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    # TODO: insert form data as a new Venue record in the db, instead
-    # TODO: modify data to be the data object returned from db insertion
-    name = request.form.get('name', '')
-    city = request.form.get('city', '')
-    state = request.form.get('state', '')
-    address = request.form.get('address', '')
-    phone = request.form.get('phone', '')
-    genres = request.form.get('genres', '')
-    image_link = request.form.get('image_link', '')
-    facebook_link = request.form.get('facebook_link', '')
-    venue = Venue(name=name,
-                city=city,
-                state=state,
-                address=address,
-                phone=phone,
-                genres=genres,
-                image_link=image_link,
-                facebook_link=facebook_link)
+    form = VenueForm(request.form)
+    venue = Venue(
+        name=form.name.data,
+        city=form.city.data,
+        state=form.state.data,
+        address=form.address.data,
+        phone=form.phone.data,
+        genres=str(form.genres.data), 
+        image_link=form.image_link.data,
+        website=form.website.data,
+        facebook_link=form.facebook_link.data,
+        seeking_talent=form.seeking_talent.data,
+        seeking_description=form.seeking_description.data)
+
     db.session.add(venue)
     db.session.commit()
 
@@ -239,7 +242,6 @@ def create_venue_submission():
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
     try:
-
         venue = Venue.query.get(venue_id)
         venue_name = venue.name
 
