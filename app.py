@@ -32,6 +32,7 @@ migrate = Migrate(app, db)
 
 class Venue(db.Model):
     __tablename__ = 'Venue'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     city = db.Column(db.String(120), nullable=False)
@@ -62,6 +63,8 @@ class Artist(db.Model):
     facebook_link = db.Column(db.String(120))
 
     shows = db.relationship('Show', backref='artist', lazy=True)
+    def __repr__(self):
+        return f'<Artist: {self.id}, {self.name}>'
 
 class Show(db.Model):
     __tablename__ = 'Show'
@@ -70,7 +73,6 @@ class Show(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('Artist.id'), nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey('Venue.id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
 
     def __repr__(self):
       return f'<Show {self.id}, Artist {self.artist_id}, Venue {self.venue_id}>'
@@ -343,7 +345,6 @@ def edit_artist_submission(artist_id):
     # artist record with ID <artist_id> using the new attributes
     data = Artist.query.filter(Artist.id == artist_id).first()
     data.name = request.form.get('name')
-    data.name = request.form.get('name')
     data.city = request.form.get('city')
     data.state = request.form.get('state')
     data.phone = request.form.get('phone')
@@ -358,39 +359,36 @@ def edit_artist_submission(artist_id):
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
     form = VenueForm()
-    venue = {
-        "id":
-        1,
-        "name":
-        "The Musical Hop",
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],
-        "address":
-        "1015 Folsom Street",
-        "city":
-        "San Francisco",
-        "state":
-        "CA",
-        "phone":
-        "123-123-1234",
-        "website":
-        "https://www.themusicalhop.com",
-        "facebook_link":
-        "https://www.facebook.com/TheMusicalHop",
-        "seeking_talent":
-        True,
-        "seeking_description":
-        "We are on the lookout for a local artist to play every two weeks. Please call us.",
-        "image_link":
-        "https://images.unsplash.com/photo-1543900694-133f37abaaa5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&q=60"
+    data = Venue.query.filter(Venue.id == venue_id).one()
+    venue={
+        "id": data.id,
+        "name": data.name,
+        "city": data.city,
+        "state": data.state,
+        "address": data.address,
+        "phone": data.phone,
+        "genres": data.genres,
+        "website": None,
+        "facebook_link": data.facebook_link,
     }
-    # TODO: populate form with values from venue with ID <venue_id>
+    
     return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-    # TODO: take values from the form submitted, and update existing
-    # venue record with ID <venue_id> using the new attributes
+    
+    data = Venue.query.filter(Venue.id == venue_id).first()
+    data.name = request.form.get('name')
+    data.city = request.form.get('city')
+    data.state = request.form.get('state')
+    data.address = request.form.get('address')
+    data.phone = request.form.get('phone')
+    data.genres = request.form.getlist('genres')
+    # data.image_link = request.form.get('image_link')
+    # data.website = request.form.getlist('website')
+    data.facebook_link = request.form.get('facebook_link')
+    db.session.commit()
     return redirect(url_for('show_venue', venue_id=venue_id))
 
 
