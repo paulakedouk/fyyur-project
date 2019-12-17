@@ -19,11 +19,11 @@ class VenueForm(FlaskForm):
     state = SelectField('state', validators=[DataRequired()], choices=STATES)
     address = StringField('address', validators=[DataRequired()])
     phone = StringField('phone')
-    image_link = StringField('image_link')
     genres = SelectMultipleField('genres',
                                  validators=[DataRequired(),
                                              Length(max=4)],
                                  choices=GENRES)
+    image_link = StringField('image_link', validators=[URL()])
     facebook_link = StringField('facebook_link', validators=[URL()])
     website = StringField('website', validators=[URL()])
     seeking_talent = BooleanField('seeking_talent')
@@ -36,8 +36,12 @@ class ArtistForm(FlaskForm):
     city = StringField('city', validators=[DataRequired()])
     state = SelectField('state', validators=[DataRequired()], choices=STATES)
     phone = StringField('phone')
-    image_link = StringField('image_link', validators=[URL()])
     genres = SelectMultipleField('genres',
                                  validators=[DataRequired()],
                                  choices=GENRES)
+    image_link = StringField('image_link', validators=[URL()])
     facebook_link = StringField('facebook_link', validators=[URL()])
+    website = StringField('website', validators=[URL()])
+    seeking_venue = BooleanField('seeking_venue')
+    seeking_description = TextAreaField('seeking_description',
+                                        validators=[Optional()])
